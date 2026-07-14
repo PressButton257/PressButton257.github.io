@@ -1,53 +1,182 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Game</title>
-<style>
-*{cursor:none!important;user-select:none;-webkit-user-select:none;-moz-user-select:none}
-body{margin:0;height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background-color:#f4f4f6;font-family:-apple-system,BlinkMacSystemFont,sans-serif;overflow:hidden;position:relative}
-.magic-button{padding:20px 40px;font-size:20px;font-weight:600;letter-spacing:1px;color:#111;background-color:#fff;border:2px solid #111;border-radius:50px;box-shadow:0 10px 20px rgba(0,0,0,0.05);transition:transform .4s cubic-bezier(.34,1.56,.64,1);will-change:transform;z-index:10}
-.magic-button:hover{transform:scale(1.15)!important}
-.magic-button:active{transform:scale(.96)!important;transition:transform .25s cubic-bezier(.25,1,.5,1)!important}
-.next-level-button{padding:12px 24px;font-size:16px;font-weight:600;letter-spacing:1px;color:#fff;background-color:#111;border:none;border-radius:50px;box-shadow:0 5px 15px rgba(0,0,0,0.1);transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .4s ease;will-change:transform;z-index:110;position:absolute;bottom:15%;opacity:0;pointer-events:none}
-.next-level-button.show{opacity:1;pointer-events:auto}
-.next-level-button:hover{transform:scale(1.08)}
-.next-level-button:active{transform:scale(.96);transition:transform .25s cubic-bezier(.25,1,.5,1)}
-.win-screen,.final-screen{position:fixed;top:0;left:0;width:100%;height:100%;background-color:#f4f4f6;color:#111;display:flex;justify-content:center;align-items:center;text-align:center;opacity:0;pointer-events:none;transition:opacity .5s ease;padding:20px;box-sizing:border-box}
-.win-screen{font-size:48px;font-weight:800;z-index:100}
-.final-screen{font-size:54px;font-weight:900;z-index:200}
-.win-screen.active,.final-screen.active{opacity:1;pointer-events:auto}
-.custom-cursor{width:17px;height:17px;background-color:#111;border-radius:50%;position:fixed;left:0;top:0;pointer-events:none;z-index:9999;will-change:transform;transition:width .15s cubic-bezier(.25,1,.5,1),height .15s cubic-bezier(.25,1,.5,1)}
-.custom-cursor.click-pulse{width:13px;height:13px}
-.notification{position:absolute;bottom:10%;font-size:24px;font-weight:600;color:#111;opacity:0;transform:translateY(20px);transition:all .4s cubic-bezier(.25,1,.5,1);z-index:10}
-.notification.show{opacity:1;transform:translateY(0)}
-.particle{position:fixed;pointer-events:none;z-index:9998}
-</style>
-</head>
-<body>
-<button class="magic-button" id="btn">Press on me!</button>
-<div class="notification" id="toast">0</div>
-<button class="next-level-button" id="nextBtn">next level</button>
-<div class="win-screen" id="win">Вы прошли эту игру</div>
-<div class="final-screen" id="final">Вы ПОНАСТОЯЩЕМУ прошли эту игру</div>
-<div class="custom-cursor" id="cursor"></div>
-<script>
-const c=document.getElementById('cursor'),b=document.getElementById('btn'),n=document.getElementById('nextBtn'),t=document.getElementById('toast'),w=document.getElementById('win'),f=document.getElementById('final');
-let c1=parseInt(localStorage.getItem('game_lvl1_clicks'))||0,c2=parseInt(localStorage.getItem('game_lvl2_clicks'))||0,cl=parseInt(localStorage.getItem('game_current_level'))||1,tm,nt,db=null,st=null,ht=null;
-const aX=new(window.AudioContext||window.webkitAudioContext)();
-function playCelebrationSound(){if(aX.state==='suspended')aX.resume();const now=aX.currentTime;[261.63,329.63,392.00,523.25].forEach((fr,i)=>{const o=aX.createOscillator(),g=aX.createGain();o.type='triangle';o.frequency.setValueAtTime(fr,now+i*0.05);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(0.1,now+i*0.05+0.05);g.gain.exponentialRampToValueAtTime(0.001,now+1.5);o.connect(g);g.connect(aX.destination);o.start(now+i*0.05);o.stop(now+1.5)})}
-function sideConfetti(){const s=[{x:0,mn:-0.2,mx:0.8},{x:window.innerWidth,mn:2.3,mx:3.3}];s.forEach(sd=>{for(let i=0;i<40;i++){const p=document.createElement('div');p.className='particle';const sz=Math.random()*8+6;p.style.width=`${sz}px`;p.style.height=`${Math.random()*4+sz}px`;p.style.backgroundColor=`hsl(${Math.random()*360},90%,50%)`;p.style.left=`${sd.x}px`;p.style.top=`${window.innerHeight*0.7}px`;document.body.appendChild(p);const an=Math.random()*(sd.mx-sd.mn)+sd.mn,sp=Math.random()*12+8;let pX=sd.x,pY=window.innerHeight*0.7,vX=Math.cos(an)*sp,vY=-Math.sin(an)*sp,op=1,rt=Math.random()*360;function frame(){pX+=vX;pY+=vY;vY+=0.25;op-=0.015;rt+=vX;p.style.transform=`translate3d(${pX-sd.x}px,${pY-window.innerHeight*0.7}px,0) rotate(${rt}deg)`;p.style.opacity=op;if(op>0&&pY<window.innerHeight)requestAnimationFrame(frame);else p.remove()}requestAnimationFrame(frame)}})}
-function sN(v){t.textContent=v;t.classList.add('show');clearTimeout(tm);tm=setTimeout(()=>{t.classList.remove('show')},2000)}
-function sD(){if(cl!==2||c2>=1000||db)return;db=document.createElement('button');db.textContent="don`t press!";db.className='magic-button';db.style.cssText='position:fixed;background-color:#ff3b30;color:#fff;border:2px solid #ff3b30;z-index:150;width:160px;height:56px;padding:0;font-size:18px;margin-left:-80px;margin-top:-28px;box-sizing:border-box;border-radius:50px;';const p=120,x=Math.random()*(window.innerWidth-p*2)+p,y=Math.random()*(window.innerHeight-p*2)+p;db.style.left=`${x}px`;db.style.top=`${y}px`;db.addEventListener('click',(e)=>{e.stopPropagation();c2=0;localStorage.setItem('game_lvl2_clicks',0);sN(0);rD();uV()});document.body.appendChild(db);ht=setTimeout(()=>{rD()},20000)}
-function rD(){if(db){db.remove();db=null}clearTimeout(ht);pS()}
-function pS(){clearTimeout(st);if(cl!==2||c2>=1000)return;st=setTimeout(()=>{sD()},Math.random()*9*60*1000+60*1000)}
-function uV(i=false){clearTimeout(nt);if(cl===1){b.textContent="Press on me!";f.classList.remove('active');w.classList.remove('active');b.style.display='block';t.style.display='block';rD();if(c1>=100){c1=100;b.style.display='none';w.classList.add('active');if(i){n.classList.add('show')}else{n.classList.remove('show');nt=setTimeout(()=>{n.classList.add('show');playCelebrationSound();sideConfetti()},2000)}}else{n.classList.remove('show')}}else if(cl===2){w.classList.remove('active');n.classList.remove('show');if(c2>=1000){c2=1000;b.style.display='none';t.style.display='none';f.classList.add('active');rD();playCelebrationSound();sideConfetti()}else{f.classList.remove('active');b.style.display='block';t.style.display='block';b.textContent="More";if(!st&&!db)pS()}}}
-b.addEventListener('click',()=>{if(cl===1&&c1<100){c1++;localStorage.setItem('game_lvl1_clicks',c1);sN(c1);uV()}else if(cl===2&&c2<1000){c2++;localStorage.setItem('game_lvl2_clicks',c2);sN(c2);uV()}});
-n.addEventListener('click',()=>{if(cl===1&&c1>=100){cl=2;localStorage.setItem('game_current_level',2);t.classList.remove('show');uV();sN(c2)}});
-document.addEventListener('keydown',(e)=>{const k=e.key.toLowerCase();if(e.code==='KeyT'||k==='t'||k==='е'){if(cl===2&&c2<1000&&!db){clearTimeout(st);st=setTimeout(()=>{sD()},8000)}}else if(e.code==='KeyY'||k==='y'||k==='н'){if(cl===2){c2=695;localStorage.setItem('game_lvl2_clicks',695);sN(695);uV()}}else if(e.code==='KeyU'||k==='u'||k==='г'){if(cl===2){c2=895;localStorage.setItem('game_lvl2_clicks',895);sN(895);uV()}}else if(e.code==='KeyQ'||k==='q'||k==='й'){c1=0;c2=0;cl=1;localStorage.setItem('game_lvl1_clicks',0);localStorage.setItem('game_lvl2_clicks',0);localStorage.setItem('game_current_level',1);t.classList.remove('show');uV(true)}else if(e.code==='KeyR'||k==='r'||k==='к'){if(cl===1){c1=95;localStorage.setItem('game_lvl1_clicks',95);sN(95);uV()}else if(cl===2){c2=995;localStorage.setItem('game_lvl2_clicks',995);sN(995);uV()}}});
-uV(true);if(cl===1&&c1>0&&c1<100)sN(c1);else if(cl===2&&c2>0&&c2<1000)sN(c2);
-window.addEventListener('mousedown',()=>{c.classList.add('click-pulse')});window.addEventListener('mouseup',()=>{c.classList.remove('click-pulse')});
-let mX=window.innerWidth/2,mY=window.innerHeight/2,cX=mX,cY=mY;document.addEventListener('mousemove',(e)=>{mX=e.clientX;mY=e.clientY});
-function an(){cX+=(mX-cX)*0.48;cY+=(mY-cY)*0.48;c.style.transform=`translate3d(${cX}px,${cY}px,0) translate(-50%,-50%)`;requestAnimationFrame(an)}an();
-</script>
-</body>
+<!DOCTYPE html> 
+<html lang="ru"> 
+<head> 
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Game</title> 
+<style> 
+/* Блокируем плагин Custom Cursor с помощью прозрачной SVG-пустышки на корневом уровне */
+html, body, *, button, div, html [class] {
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://w3.org" width="1" height="1"></svg>'), none !important;
+}
+
+* {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+}
+
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color:#f4f4f6;
+    font-family:-apple-system,BlinkMacSystemFont,sans-serif;
+    overflow: hidden;
+    position: relative;
+} 
+
+/* Главная хитрость: pointer-events: stroke заставляет плагины игнорировать кнопку, но клики работают */
+.magic-button {
+    padding: 20px 40px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #111;
+    background-color: #fff;
+    border: 2px solid #111;
+    border-radius: 50px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+    transition: transform .4s cubic-bezier(.34,1.56,.64,1);
+    will-change: transform;
+    z-index: 10;
+    pointer-events: stroke !important; 
+} 
+
+.magic-button:hover { transform: scale(1.15)!important } 
+.magic-button:active { transform: scale(.96)!important; transition: transform .25s cubic-bezier(.25,1,.5,1)!important } 
+
+.next-level-button {
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #fff;
+    background-color: #111;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    transition: transform .4s cubic-bezier(.34,1.56,.64,1), opacity .4s ease;
+    will-change: transform;
+    z-index: 110;
+    position: absolute;
+    bottom: 15%;
+    opacity: 0;
+    pointer-events: none;
+} 
+
+.next-level-button.show { opacity: 1; pointer-events: stroke !important; } 
+.next-level-button:hover { transform: scale(1.08) } 
+.next-level-button:active { transform: scale(.96); transition: transform .25s cubic-bezier(.25,1,.5,1) } 
+
+.win-screen, .final-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f4f4f6;
+    color: #111;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .5s ease;
+    padding: 20px;
+    box-sizing: border-box;
+} 
+
+.win-screen { font-size: 48px; font-weight: 800; z-index: 100 } 
+.final-screen { font-size: 54px; font-weight: 900; z-index: 200 } 
+.win-screen.active, .final-screen.active { opacity: 1; pointer-events: auto } 
+
+/* Ваша кастомная мышь со стильной плавностью */
+.custom-cursor {
+    width: 17px;
+    height: 17px;
+    background-color: #111;
+    border-radius: 50%;
+    position: fixed;
+    left: 0;
+    top: 0;
+    pointer-events: none !important;
+    z-index: 9999;
+    will-change: transform;
+    transition: width .15s cubic-bezier(.25,1,.5,1), height .15s cubic-bezier(.25,1,.5,1);
+} 
+
+.custom-cursor.click-pulse { width: 13px; height: 13px; } 
+
+.notification {
+    position: absolute;
+    bottom: 10%;
+    font-size: 24px;
+    font-weight: 600;
+    color: #111;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all .4s cubic-bezier(.25,1,.5,1);
+    z-index: 10;
+} 
+
+.notification.show { opacity: 1; transform: translateY(0) } 
+.particle { position: fixed; pointer-events: none; z-index: 9998 } 
+</style> 
+</head> 
+<body> 
+
+<button class="magic-button" id="btn">Press on me!</button> 
+<div class="notification" id="toast">0</div> 
+<button class="next-level-button" id="nextBtn">next level</button> 
+<div class="win-screen" id="win">Вы прошли эту игру</div> 
+<div class="final-screen" id="final">Вы ПОНАСТОЯЩЕМУ прошли эту игру</div> 
+<div class="custom-cursor" id="cursor"></div> 
+
+<script> 
+const c=document.getElementById('cursor'),b=document.getElementById('btn'),n=document.getElementById('nextBtn'),t=document.getElementById('toast'),w=document.getElementById('win'),f=document.getElementById('final'); 
+let c1=parseInt(localStorage.getItem('game_lvl1_clicks'))||0,c2=parseInt(localStorage.getItem('game_lvl2_clicks'))||0,cl=parseInt(localStorage.getItem('game_current_level'))||1,tm,nt,db=null,st=null,ht=null; 
+const aX=new(window.AudioContext||window.webkitAudioContext)(); 
+
+function playCelebrationSound(){if(aX.state==='suspended')aX.resume();const now=aX.currentTime;[261.63,329.63,392.00,523.25].forEach((fr,i)=>{const o=aX.createOscillator(),g=aX.createGain();o.type='triangle';o.frequency.setValueAtTime(fr,now+i*0.05);g.gain.setValueAtTime(0,now);g.gain.linearRampToValueAtTime(0.1,now+i*0.05+0.05);g.gain.exponentialRampToValueAtTime(0.001,now+1.5);o.connect(g);g.connect(aX.destination);o.start(now+i*0.05);o.stop(now+1.5)})} 
+
+function sideConfetti(){const s=[{x:0,mn:-0.2,mx:0.8},{x:window.innerWidth,mn:2.3,mx:3.3}];s.forEach(sd=>{for(let i=0;i<40;i++){const p=document.createElement('div');p.className='particle';const sz=Math.random()*8+6;p.style.width=`${sz}px`;p.style.height=`${Math.random()*4+sz}px`;p.style.backgroundColor=`hsl(${Math.random()*360},90%,50%)`;p.style.left=`${sd.x}px`;p.style.top=`${window.innerHeight*0.7}px`;document.body.appendChild(p);const an=Math.random()*(sd.mx-sd.mn)+sd.mn,sp=Math.random()*12+8;let pX=sd.x,pY=window.innerHeight*0.7,vX=Math.cos(an)*sp,vY=-Math.sin(an)*sp,op=1,rt=Math.random()*360;function frame(){pX+=vX;pY+=vY;vY+=0.25;op-=0.015;rt+=vX;p.style.transform=`translate3d(${pX-sd.x}px,${pY-window.innerHeight*0.7}px,0) rotate(${rt}deg)`;p.style.opacity=op;if(op>0&&pY<window.innerHeight)requestAnimationFrame(frame);else p.remove()}requestAnimationFrame(frame)}})} 
+
+function sN(v){t.textContent=v;t.classList.add('show');clearTimeout(tm);tm=setTimeout(()=>{t.classList.remove('show')},2000)} 
+
+function sD(){if(cl!==2||c2>=1000||db)return;db=document.createElement('button');db.textContent="don`t press!";db.className='magic-button';db.style.cssText='position:fixed;background-color:#ff3b30;color:#fff;border:2px solid #ff3b30;z-index:150;width:160px;height:56px;padding:0;font-size:18px;margin-left:-80px;margin-top:-28px;box-sizing:border-box;border-radius:50px;pointer-events:stroke !important;';const p=120,x=Math.random()*(window.innerWidth-p*2)+p,y=Math.random()*(window.innerHeight-p*2)+p;db.style.left=`${x}px`;db.style.top=`${y}px`;db.addEventListener('click',(e)=>{e.stopPropagation();c2=0;localStorage.setItem('game_lvl2_clicks',0);sN(0);rD();uV()});document.body.appendChild(db);ht=setTimeout(()=>{rD()},20000)} 
+
+function rD(){if(db){db.remove();db=null}clearTimeout(ht);pS()} 
+
+function pS(){clearTimeout(st);if(cl!==2||c2>=1000)return;st=setTimeout(()=>{sD()},Math.random()*9*60*1000+60*1000)} 
+
+function uV(i=false){clearTimeout(nt);if(cl===1){b.textContent="Press on me!";f.classList.remove('active');w.classList.remove('active');b.style.display='block';t.style.display='block';rD();if(c1>=100){c1=100;b.style.display='none';w.classList.add('active');if(i){n.classList.add('show')}else{n.classList.remove('show');nt=setTimeout(()=>{n.classList.add('show');playCelebrationSound();sideConfetti()},2000)}}else{n.classList.remove('show')}}else if(cl===2){w.classList.remove('active');n.classList.remove('show');if(c2>=1000){c2=1000;b.style.display='none';t.style.display='none';f.classList.add('active');rD();playCelebrationSound();sideConfetti()}else{f.classList.remove('active');b.style.display='block';t.style.display='block';b.textContent="More";if(!st&&!db)pS()}}} 
+
+b.addEventListener('click',()=>{if(cl===1&&c1<100){c1++;localStorage.setItem('game_lvl1_clicks',c1);sN(c1);uV()}else if(cl===2&&c2<1000){c2++;localStorage.setItem('game_lvl2_clicks',c2);sN(c2);uV()}}); 
+n.addEventListener('click',()=>{if(cl===1&&c1>=100){cl=2;localStorage.setItem('game_current_level',2);t.classList.remove('show');uV();sN(c2)}}); 
+
+document.addEventListener('keydown',(e)=>{const k=e.key.toLowerCase();if(e.code==='KeyT'||k==='t'||k==='е'){if(cl===2&&c2<1000&&!db){clearTimeout(st);st=setTimeout(()=>{sD()},8000)}}else if(e.code==='KeyY'||k==='y'||k==='н'){if(cl===2){c2=695;localStorage.setItem('game_lvl2_clicks',695);sN(695);uV()}}else if(e.code==='KeyU'||k==='u'||k==='г'){if(cl===2){c2=895;localStorage.setItem('game_lvl2_clicks',895);sN(895);uV()}}else if(e.code==='KeyQ'||k==='q'||k==='й'){c1=0;c2=0;cl=1;localStorage.setItem('game_lvl1_clicks',0);localStorage.setItem('game_lvl2_clicks',0);localStorage.setItem('game_current_level',1);t.classList.remove('show');uV(true)}else if(e.code==='KeyR'||k==='r'||k==='к'){if(cl===1){c1=95;localStorage.setItem('game_lvl1_clicks',95);sN(95);uV()}else if(cl===2){c2=995;localStorage.setItem('game_lvl2_clicks',995);sN(995);uV()}}}); 
+
+uV(true);if(cl===1&&c1>0&&c1<100)sN(c1);else if(cl===2&&c2>0&&c2<1000)sN(c2); 
+
+window.addEventListener('mousedown',()=>{c.classList.add('click-pulse')});
+window.addEventListener('mouseup',()=>{c.classList.remove('click-pulse')}); 
+
+let mX=window.innerWidth/2,mY=window.innerHeight/2,cX=mX,cY=mY;
+document.addEventListener('mousemove',(e)=>{mX=e.clientX;mY=e.clientY}); 
+
+/* Анимация осталась ПЛАВНОЙ (0.48), как вы и просили */
+function an(){
+    cX+=(mX-cX)*0.48;
+    cY+=(mY-cY)*0.48;
+    c.style.transform=`translate3d(${cX}px,${cY}px,0) translate(-50%,-50%)`;
+    requestAnimationFrame(an)
+}
+an(); 
+</script> 
+</body> 
 </html>
